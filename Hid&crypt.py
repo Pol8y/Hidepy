@@ -12,6 +12,10 @@ def unpad(data):
     return data[:-data[-1]]
 
 def encode_text_in_image(image, text, password):
+    # Pad the password to a multiple of 16 bytes
+    password = password.encode()
+    password += b' ' * (16 - len(password) % 16)
+    
     # Encrypt the text using AES
     cipher = AES.new(password, AES.MODE_ECB)
     encrypted_text = cipher.encrypt(pad(text.encode()))
@@ -39,6 +43,10 @@ def encode_text_in_image(image, text, password):
     return image
 
 def decode_text_from_image(image, password):
+    # Pad the password to a multiple of 16 bytes
+    password = password.encode()
+    password += b' ' * (16 - len(password) % 16)
+    
     # Convert the image to a 1-channel grayscale image
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
@@ -51,7 +59,9 @@ def decode_text_from_image(image, password):
         pixel = image[i // image.shape[1], i % image.shape[1]]
         
         # Extract the least significant bits of each channel
-          # If the value is 0, we have reached the end of the encrypted text
+        value = (pixel[0] & 0x01) | ((pixel[1] & 0x01) << 1) | ((pixel[2] & 0x01) << 2)
+        
+        # If the value is 0, we have reached the end of the encrypted text
         if value == 0:
             break
             
@@ -66,6 +76,7 @@ def decode_text_from_image(image, password):
     text = decrypted_text.decode()
     
     return text
+
 
 # Read the image
 image = cv2.imread('image.jpg', cv2.IMREAD_GRAYSCALE)
@@ -82,4 +93,3 @@ if '-e' in sys.argv:
     text = input('Enter the text to be hidden: ')
     image_with_hidden_text = encode_text_in_image(image, text, password)
     cv2.imwrite('image_with_hidden_text.jpg', image_with_hidden_text)
-      value = (pixel[0] & 0x01) | ((pixel[1] & 0x01) << 1) | ((pixel[2] & 0x01) <<
